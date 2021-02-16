@@ -1,15 +1,26 @@
+'''
+In this module user enters year and coordinates
+Make a map with 10 marked nearby places in location country
+     where films were shot in given year
+'''
 import math
+from time import perf_counter
 import folium
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.exc import GeocoderUnavailable
-from time import perf_counter
 
 
 def calc_distance(lat1, lon1, lat2, lon2):
     '''
+    Return distance between (lat1, lon1) and (lat2, lon2)
+
     This function is taken from: https://cutt.ly/GkN43NR
-    
+
+    >>> calc_distance(49.842180, 24.025011, 50.447739, 30.516820)
+    467.4656467572212
+    >>> calc_distance(30.246414, -97.735555, 49.842180, 24.025011)
+    9425.232027173279
     '''
     R = 6373.0
     lat1 = math.radians(lat1)
@@ -20,7 +31,8 @@ def calc_distance(lat1, lon1, lat2, lon2):
     dlon = lon2 - lon1
     dlat = lat2 - lat1
 
-    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    a = math.sin(dlat/2)**2 +\
+        math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
 
     distance = R * c
@@ -28,6 +40,13 @@ def calc_distance(lat1, lon1, lat2, lon2):
 
 
 def find_nearby_films(lat1, lon1, year):
+    '''
+    location - (lat1, lon1)
+
+    Return up to 10 nearby places in location country
+     where films were shot in given year
+    If location is not in country, return None
+    '''
     t_start = perf_counter()
     films = open('locations.list', 'r', encoding='UTF-8', errors='ignore')
     geolocator = Nominatim(user_agent="film_map")
@@ -81,6 +100,12 @@ def find_nearby_films(lat1, lon1, year):
 
 
 def get_map(lat1, lon1, year):
+    '''
+    Get Film_map.html
+    Film_map.html - a map with markers of nearby films
+    If there are no films, return "No films were shot in this country in {year}"
+    If location is not in country, return "Bad location"
+    '''
     nearby_films = find_nearby_films(lat1, lon1, year)
     if not isinstance(nearby_films, list):
         return "Bad location"
@@ -112,6 +137,9 @@ def get_map(lat1, lon1, year):
 
 
 def main():
+    '''
+    Main function, which starts program.
+    '''
     year = int(input('Please enter a year you would like to have a map for: '))
     lat = float(input('Please enter latitude: '))
     lon = float(input('Please enter longitude: '))

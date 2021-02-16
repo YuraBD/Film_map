@@ -31,9 +31,13 @@ def find_nearby_films(lat1, lon1, year):
     t_start = perf_counter()
     films = open('locations.list', 'r', encoding='UTF-8', errors='ignore')
     geolocator = Nominatim(user_agent="film_map")
-    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=0)
+    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
     nearby_films = []
     curr_location = geolocator.reverse(str(lat1) + ',' + str(lon1), language='en')
+    if not curr_location:
+        return None
+    print("Map is generating...")
+    print("Please wait...")
     curr_location = curr_location.address.split(',')[-1].strip()
     if curr_location == 'United Kingdom':
         curr_location = 'UK'
@@ -50,6 +54,7 @@ def find_nearby_films(lat1, lon1, year):
             continue
         if '{' in film[0]:
             film[0] = film[0].split('{')[0].strip()
+        film[0] = film[0].split('(')[0].strip()
         try:
             location = geolocator.geocode(film[-1].strip())
             while not location:
@@ -75,5 +80,43 @@ def find_nearby_films(lat1, lon1, year):
     return nearby_films
 
 
+def get_map(lat1, lon1, year):
+    nearby_films = find_nearby_films(lat1, lon1, year)
+    if not isinstance(nearby_films, list):
+        return "Bad location"
+    if len(nearby_films) == 0:
+        return f"No films were shot in this country in {year}"
+    nearby_films.sort(key=lambda x: x[1])
+    nearby_films = list(map(list, nearby_films))
+    i = 1
+    while i != len(nearby_films):
+        if nearby_films[i][1] == nearby_films[i-1][1]:
+            nearby_films[i-1][2] += f', {nearby_films[i][2]}'
+            nearby_films.pop(i)
+            continue
+        i += 1
+    f_map = folium.Map(location=[lat1, lon1],
+                     zoom_start=5)
+    fg = folium.FeatureGroup(name="Films")
+    for _, coords, name in nearby_films:
+        fg.add_child(folium.Marker(location=coords,
+                                   popup=name,
+                                   icon=folium.Icon()))
+    f_map.add_child(folium.Marker(location=[lat1, lon1],
+                                popup='Your location',
+                                icon=folium.Icon(color='red')))
+    f_map.add_child(fg)
+    f_map.add_child(folium.LayerControl())
+    f_map.save('Film_map.html')
+    return 'Map is generated successfully. Open Film_map.html in browser'
+
+
+def main():
+    year = int(input('Please enter a year you would like to have a map for: '))
+    lat = float(input('Please enter latitude: '))
+    lon = float(input('Please enter longitude: '))
+    print(get_map(lat, lon, year))
+
+
 if __name__ == "__main__":
-    print(find_nearby_films(61.485063, 14.392731, 2010))
+    main()

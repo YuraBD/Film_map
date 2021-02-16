@@ -1,1 +1,7 @@
 .vscode
+__pycache__
+LICENCE
+README.md
+requirements.txt
+Film_map.html
+.pylintrc
